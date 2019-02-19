@@ -13,6 +13,8 @@ const { initialState } = require('../shared/reducers/shot-generator')
 const applyDeviceQuaternion = require('./apply-device-quaternion')
 const prepareFilepathForModel = require('./prepare-filepath-for-model')
 
+const useCharacterPoseTest = require('../../../test/shot-generator/use-character-pose-test')
+
 // character needs:
 //   mesh - SkinnedMesh
 //   bone structure - ideally Mixamo standard bones
@@ -686,6 +688,8 @@ const Character = React.memo(({
   //     setLoaded(true)
   //   }
   // }, [modelData])
+
+  useCharacterPoseTest && useCharacterPoseTest({ object })
 
   return null
 })
