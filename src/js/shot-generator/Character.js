@@ -350,7 +350,8 @@ const Character = React.memo(({
     }
   }, [props.model, props.rotation, modelData])
 
-  const resetPose = () => {
+  const resetPoseAndUpdateSkeleton = () => {
+    console.log('resetPoseAndUpdateSkeleton')
     if (!object.current) return
 
     let skeleton = object.current.userData.skeleton
@@ -372,7 +373,7 @@ const Character = React.memo(({
     if (!props.posePresetId) return
 
     console.log(type, id, 'changed pose preset')
-    resetPose()
+    resetPoseAndUpdateSkeleton()
   }, [props.posePresetId])
 
   // HACK force reset skeleton pose on Board UUID change
@@ -381,7 +382,7 @@ const Character = React.memo(({
     if (!boardUid) return
 
     console.log(type, id, 'changed boards')
-    resetPose()
+    resetPoseAndUpdateSkeleton()
   }, [boardUid])
 
   useEffect(() => {
@@ -389,7 +390,7 @@ const Character = React.memo(({
     if (!object.current) return
 
     console.log(type, id, 'skeleton')
-    updateSkeleton()
+    resetPoseAndUpdateSkeleton()
   }, [props.model, props.skeleton, modelData])
 
   useEffect(() => {
@@ -591,6 +592,7 @@ const Character = React.memo(({
   }, [devices])
 
   useEffect(() => {
+    console.log('got phone input')
     if (!object.current) return
     if (!isSelected) return
 
@@ -610,6 +612,9 @@ const Character = React.memo(({
 
     if (remoteInput.down) {
       if (target) {
+
+        resetPoseAndUpdateSkeleton()
+
         let [ alpha, beta, gamma ] = remoteInput.mag.map(THREE.Math.degToRad)
         let magValues = remoteInput.mag
         let deviceQuaternion
@@ -646,6 +651,7 @@ const Character = React.memo(({
 
         if (selectedBone) {
           rotation.setFromQuaternion( objectQuaternion.normalize() )
+          console.log('dispatching updateCharacterSkeleton')
           updateCharacterSkeleton({
             id,
             name: target.name,
