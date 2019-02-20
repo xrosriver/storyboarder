@@ -377,13 +377,13 @@ const Character = React.memo(({
   }, [props.posePresetId])
 
   // HACK force reset skeleton pose on Board UUID change
-  useEffect(() => {
-    if (!modelData) return
-    if (!boardUid) return
-
-    console.log(type, id, 'changed boards')
-    resetPoseAndUpdateSkeleton()
-  }, [boardUid])
+  // useEffect(() => {
+  //   if (!modelData) return
+  //   if (!boardUid) return
+  // 
+  //   console.log(type, id, 'changed boards')
+  //   resetPoseAndUpdateSkeleton()
+  // }, [boardUid])
 
   useEffect(() => {
     if (!modelData) return
