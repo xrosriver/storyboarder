@@ -695,7 +695,7 @@ const Character = React.memo(({
   //   }
   // }, [modelData])
 
-  useCharacterPoseTest && useCharacterPoseTest({ object })
+  // useCharacterPoseTest && useCharacterPoseTest({ object })
 
   return null
 })
