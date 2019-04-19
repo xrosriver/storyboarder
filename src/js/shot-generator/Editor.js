@@ -65,6 +65,9 @@ const {
   //
   // selectors
   //
+  getSceneObjects,
+  getSelections,
+
   getSerializedState,
   getIsSceneDirty
 //} = require('../state')
@@ -187,9 +190,9 @@ THREE.Cache.enabled = true
 const SceneManager = connect(
   state => ({
     world: state.world,
-    sceneObjects: state.sceneObjects,
+    sceneObjects: getSceneObjects(state),
     remoteInput: state.input,
-    selections: state.selections,
+    selections: getSelections(state),
     selectedBone: state.selectedBone,
     mainViewCamera: state.mainViewCamera,
     activeCamera: state.activeCamera,
@@ -449,7 +452,7 @@ const SceneManager = connect(
               let cameraForLarge = state.mainViewCamera === 'live' ? camera : orthoCamera.current
 
               if (cameraControlsView.current && cameraControlsView.current.enabled) {
-                let cameraState = Object.values(state.sceneObjects).find(o => o.id === camera.userData.id)
+                let cameraState = Object.values(getSceneObjects(state)).find(o => o.id === camera.userData.id)
 
                 if (!cameraState) {
                   // FIXME
@@ -1308,8 +1311,8 @@ const ElementsPanel = connect(
   // what changes should we watch for to re-render?
   state => ({
     world: state.world,
-    sceneObjects: state.sceneObjects,
-    selections: state.selections,
+    sceneObjects: getSceneObjects(state),
+    selections: getSelections(state),
     selectedBone: state.selectedBone,
     models: state.models,
     activeCamera: state.activeCamera,
@@ -1495,17 +1498,9 @@ const LabelInput = ({ label, setLabel, onFocus, onBlur }) => {
           ]
         ]
       : [
-          'a[href=#]',
+          'a[href=#][className=object-property-heading]',
           {
-            onClick: preventDefault(onStartEditingClick),
-            style: {
-              display: 'inline-block',
-              margin: '9px 0 9px 0',
-              textDecoration: 'none',
-              fontWeight: 700,
-              fontSize: '18px',
-              color: '#818293'
-          }
+            onClick: preventDefault(onStartEditingClick)
           },
           label + ' Properties'
         ]
@@ -2037,8 +2032,6 @@ const InspectedElement = ({ sceneObject, models, updateObject, selectedBone, mac
       sceneObject.type == 'character' && [
         PosePresetsEditor, {
           id: sceneObject.id,
-          skeleton: sceneObject.skeleton,
-          model: sceneObject.model,
           posePresetId: sceneObject.posePresetId
         }
       ],
@@ -2198,7 +2191,7 @@ const Element = React.memo(({ index, style, sceneObject, isSelected, isActive, s
       ],
       ['div.row', [
           isActive
-            ? ['span.active', [Icon, { src: 'icon-item-active' }]]
+            ? ['span.active', { style: { display: 'flex' }},  [Icon, { src: 'icon-item-active' }]]
             : [],
 
           sceneObject.type === 'camera'
@@ -2209,9 +2202,11 @@ const Element = React.memo(({ index, style, sceneObject, isSelected, isActive, s
                 : []
               : ['a.visibility[href=#]', { onClick: onToggleVisibleClick }, [Icon, { src: 'icon-item-hidden' }]],
 
-              allowDelete
-                ? ['a.delete[href=#]', { onClick: onDeleteClick }, 'X']
-                : ['a.delete', { style: { opacity: 0.1 } }, 'X']
+              isSelected 
+                ? allowDelete
+                  ? ['a.delete[href=#]', { onClick: onDeleteClick }, 'X']
+                  : ['a.delete', { style: { opacity: 0.1 } }, 'X']
+                : []
       ]]
     ]
   ])
@@ -2220,7 +2215,7 @@ const Element = React.memo(({ index, style, sceneObject, isSelected, isActive, s
 const PhoneCursor = connect(
   state => ({
     selections: state.selection,
-    sceneObjects: state.sceneObjects,
+    sceneObjects: getSceneObjects(state),
   }),
   {
     selectObject,
@@ -2725,7 +2720,7 @@ const Toolbar = ({ createObject, selectObject, loadScene, saveScene, camera, set
       onCreateCharacterClick()
     }
     setTimeout(() => {
-      console.log(Object.values($r.store.getState().sceneObjects).length, 'scene objects')
+      console.log(Object.values(getSceneObjects($r.store.getState())).length, 'scene objects')
     }, 100)
   }
 
@@ -2898,7 +2893,7 @@ const ClosestObjectInspector = ({ camera, sceneObjects, characters }) => {
 
 const CameraInspector = connect(
   state => ({
-    sceneObjects: state.sceneObjects,
+    sceneObjects: getSceneObjects(state),
     activeCamera: state.activeCamera
   })
 )(
@@ -3095,8 +3090,6 @@ const editorMachine = Machine({
 
 // TODO move selector logic into reducers/shot-generator?
 // memoized selectors
-const getSceneObjects = state => state.sceneObjects
-const getSelections = state => state.selections
 const getCameraSceneObjects = createSelector(
   [getSceneObjects],
   (sceneObjects) => Object.values(sceneObjects).filter(o => o.type === 'camera')
@@ -3136,7 +3129,7 @@ const KeyHandler = connect(
   state => ({
     mainViewCamera: state.mainViewCamera,
     activeCamera: state.activeCamera,
-    selections: state.selections,
+    selections: getSelections(state),
 
     _selectedSceneObject: getSelectedSceneObject(state),
 
@@ -3208,7 +3201,13 @@ const KeyHandler = connect(
         if (event.key === '8') { if (_cameras[7]) { setActiveCamera(_cameras[7].id) }}
         if (event.key === '9') { if (_cameras[8]) { setActiveCamera(_cameras[8].id) }}
 
-        if (event.key === 'z' || event.key === 'x') {
+        if (
+          (event.key === 'z' || event.key === 'x') &&
+          !event.shiftKey &&
+          !event.metaKey &&
+          !event.ctrlKey &&
+          !event.altKey
+        ) {
           let cameraState = _cameras.find(camera => camera.id === activeCamera)
           let roll = {
             'z': Math.max(cameraState.roll - THREE.Math.DEG2RAD, -45 * THREE.Math.DEG2RAD),
@@ -3261,7 +3260,7 @@ const Editor = connect(
     activeCamera: state.activeCamera,
     remoteInput: state.input,
     aspectRatio: state.aspectRatio,
-    sceneObjects: state.sceneObjects,
+    sceneObjects: getSceneObjects(state),
     world: state.world,
     selectedBone: state.selectedBone,
     attachments: state.attachments
@@ -3353,7 +3352,7 @@ const Editor = connect(
             child.userData.type === 'character' ||
             child.userData.type === 'object'
           ) &&
-          child.userData.id === state.selections[0])
+          child.userData.id === getSelections(state)[0])
 
       let material = selected &&
         ((selected.userData.type === 'character')
