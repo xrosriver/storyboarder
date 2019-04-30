@@ -21,6 +21,7 @@ const SGCharacter = require('./components/SGCharacter')
 
 const { getIntersections, intersectObjects, cleanIntersected } = require('./utils/xrControllerFuncs')
 require('./lib/ViveController')
+require('./lib/OutlineEffect')
 
 const loadingManager = new THREE.LoadingManager()
 const objLoader = new THREE.OBJLoader2(loadingManager)
@@ -198,13 +199,34 @@ const SceneManagerXR = connect(
     const xrOffset = useRef(null)
 
     const { gl, scene, camera, setDefaultCamera } = useThree()
+
+    let renderingOutline = false
+    const rendererEffect = new THREE.OutlineEffect(gl, {
+      defaultThickness: 0.008
+    })
+
+    rendererEffect.setParams({
+      defaultThickness: 0.008,
+      ignoreMaterial: false,
+      defaultColor: [0, 0, 0]
+    })
+
+    scene.onAfterRender = function() {
+      if (renderingOutline) return
+      renderingOutline = true
+      rendererEffect.renderOutline(scene, camera)
+      renderingOutline = false
+    }
+
     useRender(() => {
       if (isXR && XRController1 && XRController2) {
         // cleanIntersected()
 				handleController(XRController1, 0)
         handleController(XRController2, 1)
       }
-    })
+      
+      gl.render(scene, camera)
+    }, true)
 
     const onTeleport = event => {
       var controller = event.target
