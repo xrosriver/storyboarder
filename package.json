@@ -140,7 +140,7 @@
     "fs-extra": "7.0.1",
     "gifencoder": "^1.1.0",
     "gl-vec2": "^1.0.0",
-    "immer": "1.7.4",
+    "immer": "8.0.1",
     "infix-to-postfix": "0.0.3",
     "jsfeat": "0.0.8",
     "jsonwebtoken": "8.1.1",
